@@ -1,6 +1,6 @@
 package model
 
-type Response struct {
+type GeneralResponse struct {
 	Response string `json:"response"`
 	Info     string `json:"info,omitempty"`
 	Status   string `json:"status,omitempty"`
