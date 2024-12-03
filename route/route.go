@@ -16,7 +16,10 @@ func URL(w http.ResponseWriter, r *http.Request) {
 
 	var method, path string = r.Method, r.URL.Path
 	switch {
-	// Cart Routes
+	// Existing routes
+	case method == "GET" && path == "/":
+		controller.GetHome(w, r)
+		// Cart Routes
 	case method == "POST" && path == "/cart":
 		controller.CreateCart(w, r) // Create cart
 	case method == "GET" && at.URLParam(path, "/cart/:user_id"):
@@ -39,10 +42,6 @@ func URL(w http.ResponseWriter, r *http.Request) {
 		controller.UpdateProduct(w, r) // Update product
 	case method == "DELETE" && at.URLParam(path, "/product/:id"):
 		controller.DeleteProduct(w, r) // Delete product
-
-	// Existing routes
-	case method == "GET" && path == "/":
-		controller.GetHome(w, r)
 	//chat bot inbox
 	case method == "POST" && at.URLParam(path, "/webhook/nomor/:nomorwa"):
 		controller.PostInboxNomor(w, r)
