@@ -16,10 +16,7 @@ func URL(w http.ResponseWriter, r *http.Request) {
 
 	var method, path string = r.Method, r.URL.Path
 	switch {
-	// Existing routes
-	case method == "GET" && path == "/":
-		controller.GetHome(w, r)
-		// Cart Routes
+	// Cart Routes
 	case method == "POST" && path == "/cart":
 		controller.CreateCart(w, r) // Create cart
 	case method == "GET" && at.URLParam(path, "/cart/:user_id"):
@@ -30,7 +27,7 @@ func URL(w http.ResponseWriter, r *http.Request) {
 		controller.UpdateItemInCart(w, r) // Update item in cart
 	case method == "DELETE" && path == "/cart/item":
 		controller.DeleteItemFromCart(w, r) // Delete item from cart
-	
+
 	// Product Routes (Assuming you have product controller functions)
 	case method == "GET" && path == "/product":
 		controller.GetAllProducts(w, r) // Get all products
@@ -42,6 +39,10 @@ func URL(w http.ResponseWriter, r *http.Request) {
 		controller.UpdateProduct(w, r) // Update product
 	case method == "DELETE" && at.URLParam(path, "/product/:id"):
 		controller.DeleteProduct(w, r) // Delete product
+
+	// Existing routes
+	case method == "GET" && path == "/":
+		controller.GetHome(w, r)
 	//chat bot inbox
 	case method == "POST" && at.URLParam(path, "/webhook/nomor/:nomorwa"):
 		controller.PostInboxNomor(w, r)
@@ -121,7 +122,7 @@ func URL(w http.ResponseWriter, r *http.Request) {
 	case method == "POST" && path == "/data/user/bio":
 		controller.PostDataBioUser(w, r)
 	/* 	case method == "POST" && at.URLParam(path, "/data/user/wa/:nomorwa"):
-		controller.PostDataUserFromWA(w, r) */
+	controller.PostDataUserFromWA(w, r) */
 	//data proyek
 	case method == "GET" && path == "/data/proyek":
 		controller.GetDataProject(w, r)
