@@ -207,6 +207,16 @@ func URL(w http.ResponseWriter, r *http.Request) {
 		controller.VerifyPasswordHandler(w, r)
 	case method == "POST" && path == "/auth/resend":
 		controller.ResendPasswordHandler(w, r)
+
+	//GEO
+	// Roads
+	case method == "POST" && path == "/geo/roads":
+		controller.GetRoads(w, r)
+	// Region
+	case method == "POST" && path == "/geo/region":
+		controller.GetRegion(w, r)
+
+
 	// Google Auth
 	default:
 		controller.NotFound(w, r)
