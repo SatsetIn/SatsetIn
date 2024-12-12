@@ -9,7 +9,8 @@ var Origins = []string{
 	"https://www.bukupedia.co.id",
 	"https://naskah.bukupedia.co.id",
 	"https://bukupedia.co.id",
-	"https://satsetin.github.io/",
+	"https://satsetin.github.io",
+	"http://127.0.0.1:5500",
 }
 
 // Fungsi untuk memeriksa apakah origin diizinkan
