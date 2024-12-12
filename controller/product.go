@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gocroot/config"
+	"github.com/gocroot/helper/at"
 	"github.com/gocroot/helper/atdb"
 	"github.com/gocroot/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -13,21 +14,38 @@ import (
 )
 
 // Handler to get all products
-func GetAllProducts(w http.ResponseWriter, r *http.Request) {
-	// Fetch all products from the database
-	var products []model.Product
-	filter := bson.M{} // Empty filter to get all products
-
-	// Get products from the 'product' collection
-	products, err := atdb.GetAllDoc[[]model.Product](config.Mongoconn, "product", filter)
+func GetAllProducts(respw http.ResponseWriter, r *http.Request) {
+	data, err := atdb.GetAllDoc[[]model.Product](config.Mongoconn, "products", primitive.M{})
 	if err != nil {
-		http.Error(w, "Error fetching products", http.StatusInternalServerError)
+		var respn model.Response
+		respn.Status = "Error: Data kategori tidak ditemukan"
+		respn.Response = err.Error()
+		at.WriteJSON(respw, http.StatusNotFound, respn)
 		return
 	}
 
-	// Respond with the list of products
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(products)
+	if len(data) == 0 {
+		var respn model.Response
+		respn.Status = "Error: Data product kosong"
+		at.WriteJSON(respw, http.StatusNotFound, respn)
+		return
+	}
+
+	var categories []map[string]interface{}
+	for _, category := range data {
+		categories = append(categories, map[string]interface{}{
+			"id":   category.ID,
+			"name": category.Name,
+			"description": category.Description,
+			"original_price": category.OriginalPrice,
+			"discount_price": category.DiscountPrice,
+			"image": category.Image,
+			"created_at": category.CreatedAt,
+			"updated_at": category.UpdatedAt,
+		})
+	}
+
+	at.WriteJSON(respw, http.StatusOK, categories)
 }
 
 // Handler to get a product by ID
@@ -55,7 +73,6 @@ func GetProductByID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(product)
 }
-
 
 // Handler to create a new product
 func CreateProduct(w http.ResponseWriter, r *http.Request) {
