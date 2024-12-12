@@ -203,6 +203,8 @@ func URL(w http.ResponseWriter, r *http.Request) {
 		controller.Auth(w, r)
 	case method == "POST" && path == "/auth/login":
 		controller.GeneratePasswordHandler(w, r)
+	case method == "POST" && path == "/auth/regis":
+		controller.RegisterAkun(w, r)
 	case method == "POST" && path == "/auth/verify":
 		controller.VerifyPasswordHandler(w, r)
 	case method == "POST" && path == "/auth/resend":
