@@ -72,24 +72,50 @@ func GetRegion(respw http.ResponseWriter, req *http.Request) {
 //GET ROADS
 func GetRoads(respw http.ResponseWriter, req *http.Request) {
 	var longlat model.LongLat
-	json.NewDecoder(req.Body).Decode(&longlat)	
-
-	filter := bson.M{
-			"geometry": bson.M{
-				"$nearSphere": bson.M{
-					"$geometry": bson.M{		
-						"type":        "Point",
-						"coordinates": []float64{longlat.Longitude, longlat.Latitude},
-					},
-					"$maxDistance": longlat.MaxDistance,
-				},
-			},
-	}
-
-	roads, err := atdb.GetAllDoc[[]model.Roads](config.MongoconnGeo, "roads", filter)
-	if err != nil {
-		at.WriteJSON(respw, http.StatusNotFound, roads)
+	// Pastikan body request didekode dengan benar
+	if err := json.NewDecoder(req.Body).Decode(&longlat); err != nil {
+		at.WriteJSON(respw, http.StatusBadRequest, "Invalid request body")
 		return
 	}
-	at.WriteJSON(respw, http.StatusOK, roads)
+
+	// Filter untuk query MongoDB berdasarkan lokasi dan jarak
+	filter := bson.M{
+		"geometry": bson.M{
+			"$nearSphere": bson.M{
+				"$geometry": bson.M{
+					"type":        "Point",  // Menambahkan tipe "Point" untuk GeoJSON
+					"coordinates": []float64{longlat.Longitude, longlat.Latitude}, // Koordinat
+				},
+				"$maxDistance": longlat.MaxDistance, // Maksimum jarak
+			},
+		},
+	}
+
+	// Ambil data jalan dari MongoDB
+	roads, err := atdb.GetAllDoc[[]model.Roads](config.MongoconnGeo, "roads", filter)
+	if err != nil {
+		at.WriteJSON(respw, http.StatusNotFound, "Data not found")
+		return
+	}
+
+	// Kirim respons dengan format GeoJSON yang benar
+	// Pastikan objek roads memiliki struktur yang sesuai dengan format GeoJSON
+	geoJSONResponse := map[string]interface{}{
+		"type":     "FeatureCollection",
+		"features": make([]interface{}, len(roads)),
+	}
+
+	for i, road := range roads {
+		geoJSONResponse["features"].([]interface{})[i] = map[string]interface{}{
+			"type": "Feature",
+			"geometry": map[string]interface{}{
+				"type":        "LineString", // Sesuaikan tipe geometry dengan data yang sesuai, misalnya "LineString" untuk jalan
+				"coordinates": road.Geometry.Coordinates, // Pastikan data koordinat jalan tersedia dalam format array
+			},
+			"properties": road.Properties, // Misalkan ada properties terkait jalan yang perlu dikirim
+		}
+	}
+
+	// Kirimkan respons GeoJSON
+	at.WriteJSON(respw, http.StatusOK, geoJSONResponse)
 }
