@@ -210,6 +210,10 @@ func URL(w http.ResponseWriter, r *http.Request) {
 	case method == "POST" && path == "/auth/resend":
 		controller.ResendPasswordHandler(w, r)
 
+	// auth form
+	case method == "POST" && path == "/login/form":
+		controller.LoginAkunForm(w, r)
+
 	//GEO
 	// Roads
 	case method == "POST" && path == "/geo/roads":
@@ -217,7 +221,6 @@ func URL(w http.ResponseWriter, r *http.Request) {
 	// Region
 	case method == "POST" && path == "/geo/region":
 		controller.GetRegion(w, r)
-
 
 	// Google Auth
 	default:
