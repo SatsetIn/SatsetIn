@@ -28,7 +28,6 @@ func URL(w http.ResponseWriter, r *http.Request) {
 	case method == "DELETE" && path == "/cart/item":
 		controller.DeleteItemFromCart(w, r) // Delete item from cart
 
-	// Product Routes (Assuming you have product controller functions)
 	case method == "GET" && path == "/product":
 		controller.GetAllProducts(w, r) // Get all products
 	case method == "GET" && at.URLParam(path, "/product/:id"):
@@ -210,6 +209,14 @@ func URL(w http.ResponseWriter, r *http.Request) {
 	case method == "POST" && path == "/auth/resend":
 		controller.ResendPasswordHandler(w, r)
 
+	// auth form
+	case method == "POST" && path == "/login/form":
+		controller.LoginAkunForm(w, r)
+
+	// checkout
+	case method == "POST" && path == "/checkout/product":
+		controller.Createcheckout(w, r)
+
 	//GEO
 	// Roads
 	case method == "POST" && path == "/geo/roads":
@@ -217,7 +224,6 @@ func URL(w http.ResponseWriter, r *http.Request) {
 	// Region
 	case method == "POST" && path == "/geo/region":
 		controller.GetRegion(w, r)
-
 
 	// Google Auth
 	default:

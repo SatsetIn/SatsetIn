@@ -611,3 +611,110 @@ func RegisterAkun(respw http.ResponseWriter, r *http.Request) {
 
 	at.WriteJSON(respw, http.StatusOK, response)
 }
+
+func LoginAkunForm(respw http.ResponseWriter, r *http.Request) {
+	var userRequest model.Userdomyikado
+
+	if err := json.NewDecoder(r.Body).Decode(&userRequest); err != nil {
+		response := model.Response{
+			Status:   "Invalid Request",
+			Response: err.Error(),
+		}
+		at.WriteJSON(respw, http.StatusBadRequest, response)
+		return
+	}
+
+	var storedUser model.Userdomyikado
+	err := config.Mongoconn.Collection("user").FindOne(context.Background(), bson.M{"email": userRequest.Email}).Decode(&storedUser)
+	if err != nil {
+		response := model.Response{
+			Status:   "Error: Toko tidak ditemukan",
+			Response: "Error: " + err.Error(),
+		}
+		at.WriteJSON(respw, http.StatusNotFound, response)
+		return
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(storedUser.Password), []byte(userRequest.Password))
+	if err != nil {
+		response := model.Response{
+			Status:   "Failed to verify password",
+			Response: "Invalid password",
+		}
+		at.WriteJSON(respw, http.StatusUnauthorized, response)
+		return
+	}
+
+	encryptedToken, err := watoken.EncodeforHours(storedUser.PhoneNumber, storedUser.Name, config.PRIVATEKEY, 18)
+	if err != nil {
+		var respn model.Response
+		respn.Status = "Error: token gagal generate"
+		respn.Response = ", Error: " + err.Error()
+		at.WriteJSON(respw, http.StatusNotFound, respn)
+		return
+	}
+
+	response := map[string]interface{}{
+		"message": "Login successful",
+		"name":    storedUser.Name,
+		"email":   storedUser.Email,
+		"phone":   storedUser.PhoneNumber,
+		"team":    storedUser.Team,
+		"scope":   storedUser.Scope,
+		"token":   encryptedToken,
+		"antrian": storedUser.JumlahAntrian,
+	}
+
+	at.WriteJSON(respw, http.StatusOK, response)
+}
+
+// func GetMenu(respw http.ResponseWriter, req *http.Request) {
+// 	payload, err := watoken.Decode(config.PublicKeyWhatsAuth, at.GetLoginFromHeader(req))
+
+// 	if err != nil {
+// 		payload, err = watoken.Decode(config.PUBLICKEY, at.GetLoginFromHeader(req))
+
+// 		if err != nil {
+// 			var respn model.Response
+// 			respn.Status = "Error: Token Tidak Valid"
+// 			respn.Info = at.GetSecretFromHeader(req)
+// 			respn.Location = "Decode Token Error"
+// 			respn.Response = err.Error()
+// 			at.WriteJSON(respw, http.StatusForbidden, respn)
+// 			return
+// 		}
+// 	}
+
+// 	var datauser model.Userdomyikado
+// 	err = config.Mongoconn.Collection("user").FindOne(context.Background(), bson.M{"phonenumber": payload.Id}).Decode(&datauser)
+// 	if err != nil {
+// 		var respn model.Response
+// 		respn.Status = "Error: User tidak ditemukan"
+// 		respn.Response = "User with the provided role ID not found"
+// 		at.WriteJSON(respw, http.StatusNotFound, respn)
+// 		return
+// 	}
+
+// 	if datauser.Role == "user" {
+// 		response := map[string]interface{}{
+// 			"message": "Menu for user",
+// 			"menu":    "/user",
+// 		}
+// 		at.WriteJSON(respw, http.StatusOK, response)
+// 		return
+// 	} else if datauser.Role == "admin" {
+// 		response := map[string]interface{}{
+// 			"message": "Menu for admin",
+// 			"menu":    "/admin",
+// 		}
+// 		at.WriteJSON(respw, http.StatusOK, response)
+// 		return
+// 	} else {
+// 		response := map[string]interface{}{
+// 			"message": "Role not recognized",
+// 			"menu":    "/505",
+// 		}
+// 		at.WriteJSON(respw, http.StatusForbidden, response)
+// 		return
+// 	}
+// }
