@@ -18,10 +18,23 @@ type CartItem struct {
 // Cart represents a shopping cart
 type Cart struct {
 	ID        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	UserID    primitive.ObjectID `json:"user_id,omitempty" bson:"user_id,omitempty"`
+	User      []User             `json:"user_id,omitempty" bson:"user_id,omitempty"`
 	Items     []CartItem         `json:"items,omitempty" bson:"items,omitempty"`
+	NamaToko  string             `json:"nama_toko,omitempty" bson:"nama_toko,omitempty"`
+	Category  string             `json:"category,omitempty" bson:"category,omitempty"`
 	CreatedAt time.Time          `json:"created_at,omitempty" bson:"created_at,omitempty"`
 	UpdatedAt time.Time          `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+	Alamat    []Alamat           `json:"alamat"`
+}
+
+type Alamat struct {
+	Street      string `json:"street,omitempty" bson:"street,omitempty"`
+	Province    string `json:"province,omitempty" bson:"province,omitempty"`
+	City        string `json:"city,omitempty" bson:"city,omitempty"`
+	Description string `json:"description,omitempty" bson:"description,omitempty"`
+	PostalCode  string `json:"postal_code,omitempty" bson:"postal_code,omitempty"`
+	CreatedAt   string `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
+	UpdatedAt   string `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
 }
 
 // AddItem adds an item to the cart

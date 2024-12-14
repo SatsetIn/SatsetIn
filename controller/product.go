@@ -8,6 +8,7 @@ import (
 	"github.com/gocroot/config"
 	"github.com/gocroot/helper/at"
 	"github.com/gocroot/helper/atdb"
+	"github.com/gocroot/helper/watoken"
 	"github.com/gocroot/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -34,14 +35,14 @@ func GetAllProducts(respw http.ResponseWriter, r *http.Request) {
 	var categories []map[string]interface{}
 	for _, category := range data {
 		categories = append(categories, map[string]interface{}{
-			"id":   category.ID,
-			"name": category.Name,
-			"description": category.Description,
+			"id":             category.ID,
+			"name":           category.Name,
+			"description":    category.Description,
 			"original_price": category.OriginalPrice,
 			"discount_price": category.DiscountPrice,
-			"image": category.Image,
-			"created_at": category.CreatedAt,
-			"updated_at": category.UpdatedAt,
+			"image":          category.Image,
+			"created_at":     category.CreatedAt,
+			"updated_at":     category.UpdatedAt,
 		})
 	}
 
@@ -76,11 +77,22 @@ func GetProductByID(w http.ResponseWriter, r *http.Request) {
 
 // Handler to create a new product
 func CreateProduct(w http.ResponseWriter, r *http.Request) {
+	_, err := watoken.Decode(config.PublicKeyWhatsAuth, at.GetLoginFromHeader(r))
+	if err != nil {
+		_, err = watoken.Decode(config.PUBLICKEY, at.GetLoginFromHeader(r))
+		if err != nil {
+			var respn model.Response
+			respn.Status = "Error: Token Tidak Valid"
+			respn.Response = err.Error()
+			at.WriteJSON(w, http.StatusForbidden, respn)
+			return
+		}
+	}
 	var product model.Product
 
 	// Decode the request body into the Product struct
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&product)
+	err = decoder.Decode(&product)
 	if err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
