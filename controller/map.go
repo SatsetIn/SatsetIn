@@ -65,17 +65,11 @@ func GetRegion(respw http.ResponseWriter, req *http.Request) {
 func GetRoads(respw http.ResponseWriter, req *http.Request) {
 	var longlat model.LongLat
 	if err := json.NewDecoder(req.Body).Decode(&longlat); err != nil {
-		http.Error(respw, "Invalid input", http.StatusBadRequest)
+		at.WriteJSON(respw, http.StatusBadRequest, map[string]string{"error": "Invalid request body"})
 		return
 	}
 
-	// Validasi data input
-	if longlat.Longitude == 0 || longlat.Latitude == 0 || longlat.MaxDistance <= 0 {
-		http.Error(respw, "Invalid longitude, latitude, or max distance", http.StatusBadRequest)
-		return
-	}
-
-	// Query MongoDB untuk filter geospasial
+	// Query MongoDB untuk mencari dokumen berdasarkan kedekatannya dengan titik geografis
 	filter := bson.M{
 		"geometry": bson.M{
 			"$nearSphere": bson.M{
@@ -88,15 +82,35 @@ func GetRoads(respw http.ResponseWriter, req *http.Request) {
 		},
 	}
 
-	// Ambil dokumen dari koleksi MongoDB
+	// Melakukan operasi pencarian pada MongoDB untuk mengambil data dokumen dari koleksi "roads"
 	roads, err := atdb.GetAllDoc[[]model.Roads](config.MongoconnGeo, "roads", filter)
 	if err != nil {
-		log.Printf("Error fetching roads: %v", err)
-		at.WriteJSON(respw, http.StatusNotFound, nil)
+		at.WriteJSON(respw, http.StatusNotFound, map[string]string{"error": "No roads found"})
 		return
 	}
 
-	// Kirimkan data sebagai respon
-	at.WriteJSON(respw, http.StatusOK, roads)
+	// Membentuk respons GeoJSON
+	geoJSONResponse := bson.M{
+		"type":     "FeatureCollection",
+		"features": []bson.M{},
+	}
+
+	// Iterasi dokumen hasil query untuk membentuk array fitur GeoJSON
+	for _, road := range roads {
+		feature := bson.M{
+			"type": "Feature",
+			"geometry": road.Geometry, // Field "geometry" harus sesuai dengan dokumen MongoDB
+			"properties": bson.M{
+				"osm_id":   road.Properties.OsmID,
+				"name":     road.Properties.Name,
+				"highway":  road.Properties.Highway,
+			},
+		}
+		geoJSONResponse["features"] = append(geoJSONResponse["features"].([]bson.M), feature)
+	}
+
+	// Kirimkan respons GeoJSON
+	at.WriteJSON(respw, http.StatusOK, geoJSONResponse)
 }
+
 
