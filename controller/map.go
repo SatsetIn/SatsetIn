@@ -18,14 +18,6 @@ func GetRegion(respw http.ResponseWriter, req *http.Request) {
 	// Parse koordinat dari body request
 	var longlat model.LongLat
 	json.NewDecoder(req.Body).Decode(&longlat)
-	// if err != nil {
-	// 	var respn model.Response
-	// 	respn.Status = "Error : Body tidak valid"
-	// 	respn.Response = err.Error()
-	// 	at.WriteJSON(respw, http.StatusBadRequest, respn)
-	// 	return
-	// }
-
 	// Filter query geospasial
 	filter := bson.M{
 		"border": bson.M{
@@ -72,8 +64,18 @@ func GetRegion(respw http.ResponseWriter, req *http.Request) {
 // GET ROADS
 func GetRoads(respw http.ResponseWriter, req *http.Request) {
 	var longlat model.LongLat
-	json.NewDecoder(req.Body).Decode(&longlat)
+	if err := json.NewDecoder(req.Body).Decode(&longlat); err != nil {
+		http.Error(respw, "Invalid input", http.StatusBadRequest)
+		return
+	}
 
+	// Validasi data input
+	if longlat.Longitude == 0 || longlat.Latitude == 0 || longlat.MaxDistance <= 0 {
+		http.Error(respw, "Invalid longitude, latitude, or max distance", http.StatusBadRequest)
+		return
+	}
+
+	// Query MongoDB untuk filter geospasial
 	filter := bson.M{
 		"geometry": bson.M{
 			"$nearSphere": bson.M{
@@ -86,10 +88,15 @@ func GetRoads(respw http.ResponseWriter, req *http.Request) {
 		},
 	}
 
+	// Ambil dokumen dari koleksi MongoDB
 	roads, err := atdb.GetAllDoc[[]model.Roads](config.MongoconnGeo, "roads", filter)
 	if err != nil {
-		at.WriteJSON(respw, http.StatusNotFound, roads)
+		log.Printf("Error fetching roads: %v", err)
+		at.WriteJSON(respw, http.StatusNotFound, nil)
 		return
 	}
+
+	// Kirimkan data sebagai respon
 	at.WriteJSON(respw, http.StatusOK, roads)
 }
+

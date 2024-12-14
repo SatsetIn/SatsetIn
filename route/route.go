@@ -218,6 +218,7 @@ func URL(w http.ResponseWriter, r *http.Request) {
 		controller.Createcheckout(w, r)
 
 	//GEO
+	//definisiin endpoint
 	// Roads
 	case method == "POST" && path == "/geo/roads":
 		controller.GetRoads(w, r)
